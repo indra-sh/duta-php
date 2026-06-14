@@ -1,0 +1,21 @@
+{
+    "name": "duta/duta-php",
+    "description": "Official PHP SDK for Duta — transactional email for developers.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["duta", "email", "transactional-email", "ses", "resend-alternative"],
+    "homepage": "https://duta.indra.sh",
+    "require": {
+        "php": ">=8.1",
+        "ext-curl": "*",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Duta\\": "src/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
