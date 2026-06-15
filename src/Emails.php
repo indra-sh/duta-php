@@ -19,7 +19,8 @@ class Emails
     /**
      * Send a transactional email.
      *
-     * Accepts: from, to (string or array), subject, html, text, reply_to, tags (assoc array).
+     * Accepts: from, to (string or array), cc, bcc, subject, html, text,
+     * reply_to, and tags (assoc array).
      * Returns an array with "id" and "status". Throws DutaException on failure.
      *
      * @param array<string, mixed> $params
@@ -32,6 +33,12 @@ class Emails
             'to' => $params['to'],
             'subject' => $params['subject'],
         ];
+        if (isset($params['cc'])) {
+            $body['cc'] = $params['cc'];
+        }
+        if (isset($params['bcc'])) {
+            $body['bcc'] = $params['bcc'];
+        }
         if (isset($params['html'])) {
             $body['html'] = $params['html'];
         }
