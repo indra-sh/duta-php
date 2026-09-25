@@ -42,7 +42,9 @@ final class CoverageTest extends TestCase
         $d->usage->get();
 
         $spec = json_decode((string) file_get_contents(__DIR__ . '/fixtures/openapi.json'), true);
+        // Fixed paths first: /emails/batch also matches /emails/{id}.
         $templates = array_keys($spec['paths']);
+        usort($templates, static fn (string $a, string $b) => [substr_count($a, '{'), $a] <=> [substr_count($b, '{'), $b]);
 
         $made = [];
         foreach ($fake->history as $entry) {
