@@ -1,63 +1,126 @@
-# Duta PHP SDK
+# duta/duta-php
 
-Official PHP client for [Duta](https://duta.indra.sh). Uses cURL, no third-party dependencies.
+The official PHP SDK for [Duta](https://duta.indra.sh), transactional email
+for Malaysia, with a Laravel mail driver.
+
+- PHP 8.1+. One dependency, Guzzle.
+- **Laravel**: set `MAIL_MAILER=duta` and every Mailable sends through Duta.
+- Retries rate limits and server errors safely: every send carries an
+  idempotency key, so a retry can never send twice.
+
+## Upgrading from 0.1.x
+
+0.2.0 is a new SDK for Duta's current API, not an update of 0.1.x, which was
+written for an earlier version of Duta that no longer runs.
 
 ## Install
 
-```bash
+```sh
 composer require duta/duta-php
 ```
 
-## Quickstart
+## Laravel
 
-```php
-require 'vendor/autoload.php';
+The package registers itself. Add your key to `.env` and choose the mailer:
 
-$duta = new \Duta\Client('duta_live_xxx');
-
-$result = $duta->emails->send([
-    'from' => 'hello@yourdomain.com',
-    'to' => 'user@example.com',
-    'subject' => 'Welcome to Duta',
-    'html' => '<p>Thanks for signing up!</p>',
-]);
-
-echo "Sent: " . $result['id'];
+```dotenv
+DUTA_API_KEY=duta_xxxxxxxxxxxxxxxx
+MAIL_MAILER=duta
 ```
 
-Get an API key from the [dashboard](https://app.duta.indra.sh). The sender domain must be verified first.
-
-## Error handling
-
-Methods throw `\Duta\DutaException` on failure:
+Your existing mail code now sends through Duta:
 
 ```php
-use Duta\DutaException;
+Mail::to($order->customer)->send(new OrderReceipt($order));
+```
 
-try {
-    $duta->emails->send([ /* ... */ ]);
-} catch (DutaException $e) {
-    echo $e->statusCode . ' ' . $e->name . ': ' . $e->getMessage();
-    // $e->name: authentication_error | permission_denied | rate_limit_exceeded | ...
+Optional: put the key in `config/services.php` instead of the environment:
+
+```php
+'duta' => ['key' => env('DUTA_API_KEY')],
+```
+
+A Mailable can set two Duta-specific headers:
+
+```php
+public function headers(): Headers
+{
+    return new Headers(text: [
+        'X-Duta-Tag-type' => 'receipt',                        // a tag: type=receipt
+        'X-Duta-Idempotency-Key' => "receipt-{$this->order->id}", // safe if the job runs twice
+    ]);
 }
 ```
 
-## API
+For everything else, inject `Duta\Duta`:
 
-### `new \Duta\Client(string $apiKey, string $baseUrl = ..., int $timeout = 30)`
+```php
+public function __construct(private \Duta\Duta $duta) {}
+```
 
-### `$duta->emails->send(array $params)`
+## Send an email
 
-`$params` keys: `from`, `to` (string or array), `subject`, `html`, `text`, `reply_to`, `tags` (assoc array). Returns an array with `id` and `status`.
+```php
+$duta = new Duta\Duta(getenv('DUTA_API_KEY'));
 
-### `$duta->emails->get(string $id)`
+$sent = $duta->emails->send([
+    'from' => 'Kedai <resit@kedai.my>',
+    'to' => 'siti@example.com',
+    'subject' => 'Resit #1042',
+    'html' => '<p>Terima kasih.</p>',
+]);
 
-Retrieve one email. Requires a full-access API key.
+echo $sent['id'];
+```
 
-### `$duta->emails->list(int $page = 1, int $limit = 20)`
+Errors throw `Duta\DutaException`. `getErrorCode()` is Duta's
+[error code](https://docs.duta.indra.sh/guides/errors/) and `getRequestId()`
+finds the request on the Logs screen.
 
-List emails, newest first. Requires a full-access API key.
+```php
+try {
+    $duta->emails->send($email, ['idempotency_key' => "receipt-{$order->id}"]);
+} catch (Duta\DutaException $e) {
+    report($e->getErrorCode() . ' ' . $e->getRequestId());
+}
+```
 
-## License
+## Batch and paging
 
-MIT
+```php
+$duta->batch->send([$first, $second], ['validation' => 'permissive']);
+
+foreach ($duta->emails->listAll(['status' => 'bounced']) as $email) {
+    echo $email['id'], PHP_EOL;
+}
+```
+
+## Verify webhooks
+
+```php
+$event = Duta\Webhook::verify(
+    $request->getContent(),        // the raw body
+    $request->headers->all(),
+    config('services.duta.webhook_secret'),
+);
+```
+
+It throws `Duta\WebhookVerificationException` when the signature is wrong or
+the delivery is more than five minutes old.
+
+## Everything else
+
+| | |
+|---|---|
+| `emails` | `send`, `get`, `list`, `listAll` |
+| `batch` | `send` |
+| `domains` | `create`, `list`, `get`, `verify`, `remove` |
+| `apiKeys` | `create`, `list`, `remove` |
+| `webhooks` | `create`, `list`, `get`, `remove`, `enable`, `test`, `deliveries`, `verify` |
+| `suppressions` | `create`, `list`, `listAll`, `remove` |
+| `logs` | `list`, `listAll`, `get` |
+| `usage` | `get` |
+
+Options: `new Duta\Duta($key, ['base_url' => ..., 'timeout' => 30.0, 'max_retries' => 2])`.
+
+Full documentation: https://docs.duta.indra.sh

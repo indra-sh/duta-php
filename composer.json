@@ -1,21 +1,58 @@
 {
     "name": "duta/duta-php",
-    "description": "Official PHP SDK for Duta — transactional email for developers.",
+    "description": "The official PHP SDK for Duta, transactional email for Malaysia, with a Laravel mail driver.",
     "type": "library",
     "license": "MIT",
-    "keywords": ["duta", "email", "transactional-email", "ses", "resend-alternative"],
-    "homepage": "https://duta.indra.sh",
+    "keywords": [
+        "duta",
+        "email",
+        "transactional-email",
+        "laravel",
+        "mail",
+        "malaysia",
+        "resend-alternative"
+    ],
+    "homepage": "https://docs.duta.indra.sh/sdks/",
+    "support": {
+        "issues": "https://github.com/indra-sh/duta-php/issues",
+        "docs": "https://docs.duta.indra.sh",
+        "source": "https://github.com/indra-sh/duta-php"
+    },
     "require": {
-        "php": ">=8.1",
-        "ext-curl": "*",
-        "ext-json": "*"
+        "php": "^8.1",
+        "ext-json": "*",
+        "guzzlehttp/guzzle": "^7.8"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0 || ^9.0 || ^10.0",
+        "phpunit/phpunit": "^10.5 || ^11.0"
+    },
+    "suggest": {
+        "laravel/framework": "Send Laravel mail through Duta with MAIL_MAILER=duta"
     },
     "autoload": {
         "psr-4": {
             "Duta\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Duta\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Duta\\Laravel\\DutaServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
     "config": {
         "sort-packages": true
-    }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }

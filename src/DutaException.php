@@ -5,56 +5,50 @@ declare(strict_types=1);
 namespace Duta;
 
 /**
- * Thrown when the Duta API returns an error.
+ * An error from the Duta API, or from reaching it. `getErrorCode()` is Duta's
+ * code (see https://docs.duta.indra.sh/guides/errors/), `getName()` the
+ * Resend-compatible name and `getRequestId()` finds the request on the Logs
+ * screen.
  */
-class DutaException extends \Exception
+class DutaException extends \RuntimeException
 {
-    /** @var string Machine-readable error name, e.g. "rate_limit_exceeded". */
-    public string $name;
-
-    /** @var int HTTP status code (0 for network errors). */
-    public int $statusCode;
-
-    /** @var string[]|null Suppressed recipient addresses, present on some 422 errors. */
-    public ?array $blocked;
-
-    private const NAME_BY_STATUS = [
-        400 => 'validation_error',
-        401 => 'authentication_error',
-        403 => 'permission_denied',
-        404 => 'not_found',
-        422 => 'unprocessable_entity',
-        429 => 'rate_limit_exceeded',
-        500 => 'internal_server_error',
-    ];
-
-    public function __construct(string $name, string $message, int $statusCode, ?array $blocked = null)
-    {
-        parent::__construct($message, $statusCode);
-        $this->name = $name;
-        $this->statusCode = $statusCode;
-        $this->blocked = $blocked;
+    /** @param array<string, mixed>|null $detail */
+    public function __construct(
+        string $message,
+        private readonly ?int $statusCode,
+        private readonly string $errorName,
+        private readonly string $errorCode,
+        private readonly ?string $requestId,
+        private readonly ?array $detail = null,
+        ?\Throwable $previous = null,
+    ) {
+        parent::__construct($message, $statusCode ?? 0, $previous);
     }
 
-    /**
-     * Normalise either of Duta's error shapes into a DutaException.
-     *
-     * @param mixed $body
-     */
-    public static function fromResponse(int $statusCode, $body): self
+    /** Null when Duta could not be reached at all. */
+    public function getStatusCode(): ?int
     {
-        $fallback = self::NAME_BY_STATUS[$statusCode] ?? 'api_error';
-        if (is_array($body)) {
-            $blocked = isset($body['blocked']) && is_array($body['blocked']) ? $body['blocked'] : null;
-            // Rate-limit shape: { statusCode, name, message }
-            if (isset($body['name'], $body['message']) && is_string($body['name']) && is_string($body['message'])) {
-                return new self($body['name'], $body['message'], $statusCode, $blocked);
-            }
-            // Common shape: { error: string }
-            if (isset($body['error']) && is_string($body['error'])) {
-                return new self($fallback, $body['error'], $statusCode, $blocked);
-            }
-        }
-        return new self($fallback, "Request failed with status {$statusCode}", $statusCode);
+        return $this->statusCode;
+    }
+
+    public function getName(): string
+    {
+        return $this->errorName;
+    }
+
+    public function getErrorCode(): string
+    {
+        return $this->errorCode;
+    }
+
+    public function getRequestId(): ?string
+    {
+        return $this->requestId;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function getDetail(): ?array
+    {
+        return $this->detail;
     }
 }
