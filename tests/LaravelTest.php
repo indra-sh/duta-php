@@ -13,7 +13,9 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\Mailables\Headers;
 use Illuminate\Support\Facades\Mail;
 use Orchestra\Testbench\TestCase;
+use PHPUnit\Framework\Attributes\Group;
 
+#[Group('laravel')]
 final class LaravelTest extends TestCase
 {
     private Fake $fake;

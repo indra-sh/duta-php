@@ -3,7 +3,7 @@
 The official PHP SDK for [Duta](https://duta.indra.sh), transactional email
 for Malaysia, with a Laravel mail driver.
 
-- PHP 8.1+. One dependency, Guzzle.
+- PHP 8.1+. One dependency, Guzzle. Laravel 12 and 13.
 - **Laravel**: set `MAIL_MAILER=duta` and every Mailable sends through Duta.
 - Retries rate limits and server errors safely: every send carries an
   idempotency key, so a retry can never send twice.
