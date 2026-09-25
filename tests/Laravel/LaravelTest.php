@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Duta\Tests;
+namespace Duta\Tests\Laravel;
+
+use Duta\Tests\Fake;
 
 use Duta\Duta;
 use Duta\Laravel\DutaServiceProvider;

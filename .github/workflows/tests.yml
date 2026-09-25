@@ -23,7 +23,7 @@ jobs:
           composer require "phpunit/phpunit:^10.5" --dev --no-update --no-interaction
           composer update --prefer-dist --no-interaction
       - name: Test
-        run: vendor/bin/phpunit --exclude-group laravel
+        run: vendor/bin/phpunit --testsuite core
 
   laravel:
     # Laravel releases still receiving security fixes. Composer refuses to
